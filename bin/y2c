@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'yaml'
+
+Dir.entries("yamls").each do |yaml_file|
+  if yaml_file.include? ".yml"
+    File.delete("./csvs/#{yaml_file.gsub('.yml', '.csv')}") if File.exists? "./csvs/#{yaml_file.gsub('.yml', '.csv')}"
+
+    csv_file_pipe = File.open("./csvs/#{yaml_file.gsub('.yml', '.csv')}", 'w')
+    yaml_file_pipe = File.open("./yamls/#{yaml_file}", 'r')
+
+    yaml_content = yaml_file_pipe.readlines.join
+
+    converted_yaml = YAML.load(yaml_content)    
+
+    rows = []
+    headers = ['title']
+
+    converted_yaml.each do |top_key, contents|
+
+      if contents.respond_to? 'each'
+
+        converted_yaml[top_key].each do |title, sub_contents|
+          data = {}
+          data['title'] = title
+
+          converted_yaml[top_key][title].each do |key, value|
+            headers.push(key) unless headers.include? key
+        
+            data[key] = value
+          end
+
+          rows.push(data)
+        end
+      end
+    end
+
+    puts "\n\n\n\nHeaders:\n\n"
+    puts headers
+    puts "\n\n\n\n"
+    puts rows
+    puts "\n\n\n\n"
+
+    csv_file_pipe << "#{headers.join(',')}\n"
+    rows.each do |row|
+      this_row = []
+      headers.each do |header|
+        this_row.push(row[header])
+      end
+      csv_file_pipe << "#{this_row.join(',')}\n"
+    end
+
+
+    csv_file_pipe.close
+    yaml_file_pipe.close
+  end
+end
